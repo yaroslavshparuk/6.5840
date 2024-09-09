@@ -17,13 +17,35 @@ import "strconv"
 type ExampleArgs struct {
 	X int
 }
-
+type Args struct {
+}
 type ExampleReply struct {
 	Y int
 }
+type JobDoneReply struct {
+	done bool
+}
+type EmptyReply struct {
+}
+type TaskRequestReply struct {
+	IsMapTask    bool
+	IsReduceTask bool
+	FileName     string
+	MappedFiles  []string
+	TaskNumber   int
+	ReduceNumber int
+}
+
+type MapDoneArgs struct {
+	FileName    string
+	MappedFiles []string
+}
+
+type ReduceDoneArgs struct {
+	FileName string
+}
 
 // Add your RPC definitions here.
-
 
 // Cook up a unique-ish UNIX-domain socket name
 // in /var/tmp, for the coordinator.

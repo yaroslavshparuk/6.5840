@@ -10,7 +10,10 @@ package main
 // Please do not change this file.
 //
 
-import "6.5840/mr"
+import (
+	"6.5840/mr"
+	"time"
+)
 import "plugin"
 import "os"
 import "fmt"
@@ -23,8 +26,9 @@ func main() {
 	}
 
 	mapf, reducef := loadPlugin(os.Args[1])
-
-	mr.Worker(mapf, reducef)
+	for !mr.Worker(mapf, reducef) {
+		time.Sleep(2 * time.Second)
+	}
 }
 
 // load the application Map and Reduce functions
