@@ -12,6 +12,7 @@ package main
 
 import (
 	"6.5840/mr"
+  "github.com/google/uuid"
 	"time"
 )
 import "plugin"
@@ -26,7 +27,7 @@ func main() {
 	}
 
 	mapf, reducef := loadPlugin(os.Args[1])
-	for !mr.Worker(mapf, reducef) {
+	for !mr.Worker(mapf, reducef, uuid.New().String()) {
 		time.Sleep(2 * time.Second)
 	}
 }

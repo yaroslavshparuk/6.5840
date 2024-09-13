@@ -15,14 +15,14 @@ type FileTask struct {
 	fileName      string
 	mapStarted    bool
 	mapDone       bool
-	reduceStarted bool
-	reduceDone    bool
 	mappedFiles   []string
 }
 
 type Coordinator struct {
 	fileTasks      []FileTask
 	filesToProcess []string
+	reduceStarted bool
+  reduceDone bool
 	nReduce        int
 	mutex          sync.Mutex
 }
@@ -43,23 +43,25 @@ func (c *Coordinator) RequestTask(args *Args, reply *TaskRequestReply) error {
 			reply.ReduceNumber = c.nReduce
 			reply.IsMapTask = true
 			c.fileTasks = append(c.fileTasks, newTask)
-			fmt.Printf("Gave %v to map", fileName)
+			fmt.Printf("Gave %v to map\n", fileName)
 			return nil
-		}
-		if !fileTask.reduceStarted {
-			for _, mappedFile := range fileTask.mappedFiles {
-				reply.MappedFiles = append(reply.MappedFiles, mappedFile)
-			}
+    }
+  }
+  if(!c.reduceStarted) {
+   for _, ft := range c.fileTasks{
+      if(!ft.mapDone){
+        return nil;
+      }
+for _, mf := range ft.mappedFiles{
+				reply.MappedFiles = append(reply.MappedFiles, mf)
+    }
+  }
 
-			fmt.Printf("Gave %v to reduce", fileName)
-			fileTask.reduceStarted = true
 			reply.IsReduceTask = true
-			reply.TaskNumber = num
-			reply.FileName = fileName
-			return nil
-		}
-	}
-	return nil
+      c.reduceStarted  = true
+			fmt.Printf("Reduce started\n")
+  }
+  			return nil
 }
 
 func (c *Coordinator) MapDone(args *MapDoneArgs, reply *EmptyReply) error {
@@ -80,12 +82,7 @@ func (c *Coordinator) MapDone(args *MapDoneArgs, reply *EmptyReply) error {
 func (c *Coordinator) ReduceDone(args *ReduceDoneArgs, reply *EmptyReply) error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
-	fileTask, found := c.getFileTask(args.FileName)
-	if found {
-		fileTask.reduceDone = true
-	} else {
-		return errors.New("No such task started")
-	}
+  c.reduceDone = true
 	return nil
 }
 func (c *Coordinator) getFileTask(fileName string) (*FileTask, bool) {
@@ -122,12 +119,8 @@ func (c *Coordinator) Done() bool {
 	if len(c.fileTasks) == 0 {
 		return false
 	}
-	for _, ft := range c.fileTasks {
-		if !ft.reduceDone {
-			return false
-		}
-	}
-	return true
+	
+	return c.reduceDone; 
 }
 
 // create a Coordinator.

@@ -105,17 +105,22 @@ func reduceTask(filename string, intermediateFiles []string, taskNumber int, red
 }
 
 // main/mrworker.go calls this function.
-func Worker(mapf func(string, string) []KeyValue, reducef func(string, []string) string) bool {
+func Worker(mapf func(string, string) []KeyValue, reducef func(string, []string) string, uuid string) bool {
+  fmt.Println("Requesting task... " + uuid + "\n")
 	task, err := CallRequestTask()
 	if err != nil {
 		return false
 	}
 	if task.IsMapTask {
+    fmt.Println("Map task returned for " + uuid + "\n")
 		mapTask(task.FileName, task.TaskNumber, task.ReduceNumber, mapf)
+    fmt.Println("Map task done by " + uuid)
 		return false
 	}
 	if task.IsReduceTask {
+    fmt.Println("Reduce task returned for " + uuid + "\n")
 		reduceTask(task.FileName, task.MappedFiles, task.TaskNumber, reducef)
+    fmt.Println("Reduce task done " + uuid)
 		return false
 	}
 	return CallJobDone()
@@ -155,10 +160,8 @@ func CallRequestTask() (TaskRequestReply, error) {
 	reply := TaskRequestReply{}
 	ok := call("Coordinator.RequestTask", &Args{}, &reply)
 	if ok {
-		fmt.Printf("Reply from request task %s\n", reply.FileName)
 		return reply, nil
 	} else {
-		fmt.Printf("call failed!\n")
 		return reply, errors.New("request Task RPC call failed")
 	}
 }
@@ -172,6 +175,7 @@ func call(rpcname string, args interface{}, reply interface{}) bool {
 	c, err := rpc.DialHTTP("unix", sockname)
 	if err != nil {
 		log.Fatal("dialing:", err)
+    return false
 	}
 	defer c.Close()
 
@@ -181,5 +185,6 @@ func call(rpcname string, args interface{}, reply interface{}) bool {
 	}
 
 	fmt.Println(err)
+  os.Exit(1)
 	return false
 }
